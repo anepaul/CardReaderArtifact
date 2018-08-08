@@ -1,0 +1,27 @@
+<annotation>
+	<folder>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/Annotations_Val</folder>
+	<filename>000009.png</filename>
+	<path>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/GeneratedData_Val/000009.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>400</width>
+		<height>400</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>0</name>
+		<pose>Frontal</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<occluded>0</occluded>
+		<bndbox>
+			<xmin>78</xmin>
+			<xmax>311</xmax>
+			<ymin>148</ymin>
+			<ymax>298</ymax>
+		</bndbox>
+	</object>
+</annotation>

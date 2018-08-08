@@ -1,0 +1,27 @@
+<annotation>
+	<folder>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/Annotations_Train</folder>
+	<filename>000000.png</filename>
+	<path>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/GeneratedData_Train/000000.png</path>
+	<source>
+		<database>Unknown</database>
+	</source>
+	<size>
+		<width>400</width>
+		<height>400</height>
+		<depth>3</depth>
+	</size>
+	<segmented>0</segmented>
+	<object>
+		<name>0</name>
+		<pose>Frontal</pose>
+		<truncated>0</truncated>
+		<difficult>0</difficult>
+		<occluded>0</occluded>
+		<bndbox>
+			<xmin>12</xmin>
+			<xmax>236</xmax>
+			<ymin>208</ymin>
+			<ymax>352</ymax>
+		</bndbox>
+	</object>
+</annotation>
