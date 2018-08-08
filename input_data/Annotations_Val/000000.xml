@@ -1,7 +1,7 @@
 <annotation>
-	<folder>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/Annotations_Val</folder>
+	<folder>./input_data/Annotations_Val</folder>
 	<filename>000000.png</filename>
-	<path>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/GeneratedData_Val/000000.png</path>
+	<path>./input_data/GeneratedData_Val/000000.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -18,10 +18,10 @@
 		<difficult>0</difficult>
 		<occluded>0</occluded>
 		<bndbox>
-			<xmin>167</xmin>
-			<xmax>391</xmax>
-			<ymin>246</ymin>
-			<ymax>390</ymax>
+			<xmin>96</xmin>
+			<xmax>320</xmax>
+			<ymin>57</ymin>
+			<ymax>201</ymax>
 		</bndbox>
 	</object>
 </annotation>

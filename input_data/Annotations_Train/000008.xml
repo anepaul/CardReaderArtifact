@@ -1,7 +1,7 @@
 <annotation>
-	<folder>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/Annotations_Train</folder>
+	<folder>./input_data/Annotations_Train</folder>
 	<filename>000008.png</filename>
-	<path>/Users/sunnywang/Documents/workspace-ml/CardReader/input_data/GeneratedData_Train/000008.png</path>
+	<path>./input_data/GeneratedData_Train/000008.png</path>
 	<source>
 		<database>Unknown</database>
 	</source>
@@ -18,10 +18,10 @@
 		<difficult>0</difficult>
 		<occluded>0</occluded>
 		<bndbox>
-			<xmin>107</xmin>
-			<xmax>337</xmax>
-			<ymin>193</ymin>
-			<ymax>341</ymax>
+			<xmin>55</xmin>
+			<xmax>285</xmax>
+			<ymin>187</ymin>
+			<ymax>335</ymax>
 		</bndbox>
 	</object>
 </annotation>
