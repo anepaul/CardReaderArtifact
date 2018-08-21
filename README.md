@@ -3,5 +3,5 @@
 To generate training data - 
 
 ```
-python generate_data.py -t [totalImages]
+python generate_data.py -t 500 -l 30 -f ./val -m L
 ```
