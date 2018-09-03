@@ -31,7 +31,7 @@ scaleLow = 0.7
 scaleHigh = 1.0
 
 #Total number of backgrounds available
-backChoiceHigh = 480
+backChoiceHigh = 3
 cardChoiceHigh = 3
 
 #Whether to output grayscale images
@@ -79,6 +79,58 @@ def _create_mask(img, size):
     img_a = img_a > 0
     return img, Image.fromarray(img_a.astype(np.uint8)*255)
 
+# LIZHI'S CODE
+def _change_perspective(image, perspective, posX, posY, scale):
+    imgHeight = image.shape[0]
+    imgWidth = image.shape[1]
+
+    # Original image's coordiates
+    rect = np.array([
+        [0, 0],
+        [imgWidth, 0],
+        [imgWidth, imgHeight],
+        [0, imgHeight]], dtype="float32")
+    print("orgi", rect)
+
+    # Generate new width and height
+    newWidth = int(_get_new_length(imgWidth, perspective))
+    newHeight = int(_get_new_length(imgHeight, perspective))
+    randomNum = np.random.uniform(1, perspective)
+
+    print ("newHeightnewHeightnewHeight", newWidth, newHeight, randomNum)
+
+    dst = np.array([
+        [0, 0],
+        [newWidth, randomNum],
+        [newWidth, newHeight],
+        [randomNum, newHeight]], dtype="float32")
+    print("dest", dst)
+
+    M = cv2.getPerspectiveTransform(rect, dst)
+    warped = cv2.warpPerspective(image, M, (newWidth, newHeight))
+
+    dstWithBackground = np.array([
+        [posX, posY],
+        [(newWidth + posX) * scale, (randomNum + posY) * scale],
+        [(newWidth + posX) * scale, (newHeight + posY) * scale],
+        [(randomNum + posX) * scale, (newHeight + posY) * scale]], dtype="float32")
+    print("coord in background", dstWithBackground)
+
+    # Return the warped image
+    return warped, dstWithBackground
+
+def _get_new_length(length, percentage):
+    # Generate a random number between 1 and user input
+    randomNum = np.random.uniform(1, percentage)
+    # Generate positive or negtive
+    posNeg = np.random.choice([-1, 1])
+    randomNum = round(posNeg * randomNum, 2)
+    print("posNeg", posNeg, "randomNum", randomNum)
+    # Use the random number to generate new length or width for coordiates
+    # newSize = length * (100 - randomNum)/100
+    newSize = length
+    return newSize
+
 def _create_composite_resize(img, backPath, size, pos):
 
     #create the image and mask with new size
@@ -90,20 +142,24 @@ def _create_composite_resize(img, backPath, size, pos):
     
     return back
 
-def _write_xml_file(xmlPath, imgPath, scale, pos1, pos2):
+def _write_xml_file(xmlPath, imgPath, scale, destArray):
     with open(xmlPath, 'w') as xml_file:
         xml_file.write('<annotation>\n')
         xml_file.write('\t<path>{}</path>\n'.format(imgPath))
         xml_file.write('\t<scale>{}</scale>\n'.format(scale))
-        xml_file.write('\t<xmin>{}</xmin>\n'.format(pos1[0]))
-        xml_file.write('\t<ymin>{}</ymin>\n'.format(pos1[1]))
-        xml_file.write('\t<xmax>{}</xmax>\n'.format(pos2[0]))
-        xml_file.write('\t<ymax>{}</ymax>\n'.format(pos2[1]))
+        xml_file.write('\t<x0>{}</x0>\n'.format(int(destArray[0,0])))
+        xml_file.write('\t<y0>{}</y0>\n'.format(int(destArray[0,1])))
+        xml_file.write('\t<x1>{}</x1>\n'.format(int(destArray[1,0])))
+        xml_file.write('\t<y1>{}</y1>\n'.format(int(destArray[1,1])))
+        xml_file.write('\t<x2>{}</x2>\n'.format(int(destArray[2,0])))
+        xml_file.write('\t<y2>{}</y2>\n'.format(int(destArray[2,1])))
+        xml_file.write('\t<x3>{}</x3>\n'.format(int(destArray[3,0])))
+        xml_file.write('\t<y3>{}</y3>\n'.format(int(destArray[3,1])))
 
         xml_file.write('</annotation>')
 
 
-def _generate_card_images(totalImages, maxLightOffset):
+def _generate_card_images(totalImages, maxLightOffset, perspective):
     print("Total Image count:", totalImages)
     print("Max lighting offset", maxLightOffset)
 
@@ -117,10 +173,11 @@ def _generate_card_images(totalImages, maxLightOffset):
         print("Background image path:", backPath)
 
         #Generate a random scale
-        scale = scaleLow + np.random.random()*(scaleHigh-scaleLow)
+        # scale = scaleLow + np.random.random()*(scaleHigh-scaleLow)
+        scale = 1
         imgWidth = int(np.floor(scale * imgOrigWidth))
         imgHeight = int(np.floor(scale * imgOrigHeight))
-        print("imgWidth:", imgWidth, "imgHeight: ", imgHeight)
+        print("scale", scale, "imgWidth:", imgWidth, "imgHeight: ", imgHeight)
 
         #generate a random translation
         posXHigh = backWidth-imgWidth
@@ -149,8 +206,12 @@ def _generate_card_images(totalImages, maxLightOffset):
         	
         cardImage = Image.fromarray(cardArray)
         
-        
-        comp = _create_composite_resize(cardImage, backPath, [imgWidth, imgHeight], [posX, posY])
+        #adding perspective
+        cv_comp = np.asarray(cardImage).copy()
+        warp, dstWithBackground = _change_perspective(cv_comp, perspective, posX, posY, scale)
+
+        comp = Image.fromarray(warp)
+        comp = _create_composite_resize(comp, backPath, [imgWidth, imgHeight], [posX, posY])
         
         if outputMode == 'L': 
         	comp = comp.convert('L')
@@ -162,7 +223,7 @@ def _generate_card_images(totalImages, maxLightOffset):
 
         #generate the xml file
         xmlPath = '{0}/{1}.xml'.format(xmlRoot, '{:06d}'.format(i))
-        _write_xml_file(xmlPath, compPath, scale, [posX, posY], [posX+imgWidth, posY+imgHeight])
+        _write_xml_file(xmlPath, compPath, scale, dstWithBackground)
         
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Create training and validation data for card reader.')
@@ -170,16 +231,16 @@ def parse_args():
     parser.add_argument('-l', '--light', dest = 'maxLight', type=int, default=50, help = 'The upper limit of lighting offset?')
     parser.add_argument('-f', '--folder', dest = 'targetFolder', type=str, default='.', help = 'Where to put the generated images?')
     parser.add_argument('-m', '--mode', dest = 'mode', type=str, default='RGB', help = 'Grayscale output?')
-
+    parser.add_argument('-p', '--perspective', dest='perspective', type=int, default=10, help='max perspective scale')
     args = parser.parse_args()
     return args
 
 if __name__ == "__main__":
 	args = parse_args()
 	compRoot = args.targetFolder + '/images'
-	os.makedirs(compRoot)
+	os.makedirs(compRoot, exist_ok=True)
 	xmlRoot = args.targetFolder + '/annotations'
-	os.makedirs(xmlRoot)
+	os.makedirs(xmlRoot, exist_ok=True)
 	outputMode = args.mode
 	
-	_generate_card_images(args.totalImages, args.maxLight)
+	_generate_card_images(args.totalImages, args.maxLight, args.perspective)
