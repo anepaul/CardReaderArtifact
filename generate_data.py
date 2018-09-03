@@ -126,7 +126,7 @@ def _get_new_length(length, percentage):
     posNeg = np.random.choice([-1, 1])
     randomNum = round(posNeg * randomNum, 2)
     print("posNeg", posNeg, "randomNum", randomNum)
-    # Use the random number to generate new length or width for coordiates
+    # Use the random number to generate new cordinate X or Y for coordiates
     # newSize = length * (100 - randomNum)/100
     newSize = length
     return newSize
