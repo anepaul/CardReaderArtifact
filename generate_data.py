@@ -79,57 +79,32 @@ def _create_mask(img, size):
     img_a = img_a > 0
     return img, Image.fromarray(img_a.astype(np.uint8)*255)
 
-# LIZHI'S CODE
-def _change_perspective(image, perspective, posX, posY, scale):
-    imgHeight = image.shape[0]
+def _apply_perspective(image, pos, radius):
     imgWidth = image.shape[1]
-
+    imgHeight = image.shape[0]
+    print("image width: ", imgWidth, "image height: ", imgHeight)
+    
     # Original image's coordiates
-    rect = np.array([
-        [0, 0],
-        [imgWidth, 0],
-        [imgWidth, imgHeight],
-        [0, imgHeight]], dtype="float32")
-    print("orgi", rect)
+    src = np.array([
+        [pos[0], pos[1]],
+        [pos[0] + imgWidth, pos[1]],
+        [pos[0] + imgWidth, pos[1] + imgHeight],
+        [pos[0], pos[1] + imgHeight]], dtype="float32")
+    print("orginal src: ", src)
 
-    # Generate new width and height
-    newWidth = int(_get_new_length(imgWidth, perspective))
-    newHeight = int(_get_new_length(imgHeight, perspective))
-    randomNum = np.random.uniform(1, perspective)
-
-    print ("newHeightnewHeightnewHeight", newWidth, newHeight, randomNum)
-
+    #Destination coordinates
     dst = np.array([
-        [0, 0],
-        [newWidth, randomNum],
-        [newWidth, newHeight],
-        [randomNum, newHeight]], dtype="float32")
-    print("dest", dst)
+        [pos[0] + np.random.randint(1, high= radius), pos[1] + np.random.randint(1, high= radius)],
+        [pos[0] + imgWidth -  np.random.randint(1, high= radius), pos[1] + np.random.randint(1, high= radius)],
+        [pos[0] + imgWidth - np.random.randint(1, high= radius), pos[1] + imgHeight - np.random.randint(1, high= radius)],
+        [pos[0] + np.random.randint(1, high= radius), pos[1] + imgHeight - np.random.randint(1, high= radius)]], dtype="float32")
+    print("destination: ", dst)
 
-    M = cv2.getPerspectiveTransform(rect, dst)
-    warped = cv2.warpPerspective(image, M, (newWidth, newHeight))
-
-    dstWithBackground = np.array([
-        [posX, posY],
-        [(newWidth + posX) * scale, (randomNum + posY) * scale],
-        [(newWidth + posX) * scale, (newHeight + posY) * scale],
-        [(randomNum + posX) * scale, (newHeight + posY) * scale]], dtype="float32")
-    print("coord in background", dstWithBackground)
-
+    M = cv2.getPerspectiveTransform(src, dst)
+    warped = cv2.warpPerspective(image, M, (imgWidth, imgHeight))
+    
     # Return the warped image
-    return warped, dstWithBackground
-
-def _get_new_length(length, percentage):
-    # Generate a random number between 1 and user input
-    randomNum = np.random.uniform(1, percentage)
-    # Generate positive or negtive
-    posNeg = np.random.choice([-1, 1])
-    randomNum = round(posNeg * randomNum, 2)
-    print("posNeg", posNeg, "randomNum", randomNum)
-    # Use the random number to generate new cordinate X or Y for coordiates
-    # newSize = length * (100 - randomNum)/100
-    newSize = length
-    return newSize
+    return warped, dst
 
 def _create_composite_resize(img, backPath, size, pos):
 
@@ -159,7 +134,7 @@ def _write_xml_file(xmlPath, imgPath, scale, destArray):
         xml_file.write('</annotation>')
 
 
-def _generate_card_images(totalImages, maxLightOffset, perspective):
+def _generate_card_images(totalImages, maxLightOffset, persRange):
     print("Total Image count:", totalImages)
     print("Max lighting offset", maxLightOffset)
 
@@ -173,11 +148,10 @@ def _generate_card_images(totalImages, maxLightOffset, perspective):
         print("Background image path:", backPath)
 
         #Generate a random scale
-        # scale = scaleLow + np.random.random()*(scaleHigh-scaleLow)
-        scale = 1
+        scale = scaleLow + np.random.random()*(scaleHigh-scaleLow)
         imgWidth = int(np.floor(scale * imgOrigWidth))
         imgHeight = int(np.floor(scale * imgOrigHeight))
-        print("scale", scale, "imgWidth:", imgWidth, "imgHeight: ", imgHeight)
+        print("imgWidth:", imgWidth, "imgHeight: ", imgHeight)
 
         #generate a random translation
         posXHigh = backWidth-imgWidth
@@ -190,6 +164,7 @@ def _generate_card_images(totalImages, maxLightOffset, perspective):
         cardImagePath='{0}/Card{1}.png'.format(cardImageRoot, '{:01d}'.format(np.random.randint(1, high= cardChoiceHigh)))
         print("Card image path:", cardImagePath)
         cardImage=Image.open(cardImagePath)
+        cardImage = cardImage.resize((imgWidth, imgHeight))
         
         #random blur the image
         if np.random.randint(1, high= 10) > 6: 
@@ -204,14 +179,13 @@ def _generate_card_images(totalImages, maxLightOffset, perspective):
         if np.random.randint(1, high= 10) > 6: 
         	cardArray = _salt_pepper(cardArray)
         	
-        cardImage = Image.fromarray(cardArray)
         
-        #adding perspective
-        cv_comp = np.asarray(cardImage).copy()
-        warp, dstWithBackground = _change_perspective(cv_comp, perspective, posX, posY, scale)
-
-        comp = Image.fromarray(warp)
-        comp = _create_composite_resize(comp, backPath, [imgWidth, imgHeight], [posX, posY])
+        #apply random perspective
+        cardArray, dst = _apply_perspective(cardArray, [posX, posY], persRange)
+        
+        cardImage = Image.fromarray(cardArray)
+ 
+        comp = _create_composite_resize(cardImage, backPath, [imgWidth, imgHeight], [posX, posY])
         
         if outputMode == 'L': 
         	comp = comp.convert('L')
@@ -223,7 +197,7 @@ def _generate_card_images(totalImages, maxLightOffset, perspective):
 
         #generate the xml file
         xmlPath = '{0}/{1}.xml'.format(xmlRoot, '{:06d}'.format(i))
-        _write_xml_file(xmlPath, compPath, scale, dstWithBackground)
+        _write_xml_file(xmlPath, compPath, scale, dst)
         
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Create training and validation data for card reader.')
@@ -231,7 +205,7 @@ def parse_args():
     parser.add_argument('-l', '--light', dest = 'maxLight', type=int, default=50, help = 'The upper limit of lighting offset?')
     parser.add_argument('-f', '--folder', dest = 'targetFolder', type=str, default='.', help = 'Where to put the generated images?')
     parser.add_argument('-m', '--mode', dest = 'mode', type=str, default='RGB', help = 'Grayscale output?')
-    parser.add_argument('-p', '--perspective', dest='perspective', type=int, default=10, help='max perspective scale')
+    parser.add_argument('-p', '--perspective', dest='perspective', type=int, default=6, help='max perspective range')
     args = parser.parse_args()
     return args
 
