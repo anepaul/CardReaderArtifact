@@ -31,7 +31,7 @@ scaleLow = 0.7
 scaleHigh = 1.0
 
 #Total number of backgrounds available
-backChoiceHigh = 480
+backChoiceHigh = 3
 cardChoiceHigh = 3
 
 #Whether to output grayscale images
@@ -177,9 +177,9 @@ def parse_args():
 if __name__ == "__main__":
 	args = parse_args()
 	compRoot = args.targetFolder + '/images'
-	os.makedirs(compRoot)
+	os.makedirs(compRoot, exist_ok=True)
 	xmlRoot = args.targetFolder + '/annotations'
-	os.makedirs(xmlRoot)
+	os.makedirs(xmlRoot, exist_ok=True)
 	outputMode = args.mode
 	
 	_generate_card_images(args.totalImages, args.maxLight)
