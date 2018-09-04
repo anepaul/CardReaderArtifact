@@ -181,7 +181,14 @@ def _generate_card_images(totalImages, maxLightOffset, persRange):
         	
         
         #apply random perspective
-        cardArray, dst = _apply_perspective(cardArray, [posX, posY], persRange)
+        if persRange > 0: 
+        	cardArray, dst = _apply_perspective(cardArray, [posX, posY], persRange)
+        else:
+        	dst = np.array([
+				[posX, posY],
+				[posX + imgWidth, posY],
+				[posX + imgWidth, posY + imgHeight],
+				[posX, posY + imgHeight]], dtype="float32")
         
         cardImage = Image.fromarray(cardArray)
  
@@ -205,7 +212,7 @@ def parse_args():
     parser.add_argument('-l', '--light', dest = 'maxLight', type=int, default=50, help = 'The upper limit of lighting offset?')
     parser.add_argument('-f', '--folder', dest = 'targetFolder', type=str, default='.', help = 'Where to put the generated images?')
     parser.add_argument('-m', '--mode', dest = 'mode', type=str, default='RGB', help = 'Grayscale output?')
-    parser.add_argument('-p', '--perspective', dest='perspective', type=int, default=6, help='max perspective range')
+    parser.add_argument('-p', '--perspective', dest='perspective', type=int, default=0, help='max perspective range')
     args = parser.parse_args()
     return args
 
