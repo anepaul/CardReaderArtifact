@@ -93,12 +93,21 @@ def _apply_perspective(image, pos, radius):
     print("orginal src: ", src)
 
     #Destination coordinates
-    dst = np.array([
-        [pos[0] + np.random.randint(1, high= radius), pos[1] + np.random.randint(1, high= radius)],
-        [pos[0] + imgWidth -  np.random.randint(1, high= radius), pos[1] + np.random.randint(1, high= radius)],
-        [pos[0] + imgWidth - np.random.randint(1, high= radius), pos[1] + imgHeight - np.random.randint(1, high= radius)],
-        [pos[0] + np.random.randint(1, high= radius), pos[1] + imgHeight - np.random.randint(1, high= radius)]], dtype="float32")
-    print("destination: ", dst)
+	#delta = np.array([
+			#[np.random.randint(radius), np.random.randint(radius)],
+			#[-  np.random.randint(radius), np.random.randint(radius)],
+			#[- np.random.randint(radius), - np.random.randint(radius)],
+			#[np.random.randint(radius), - np.random.randint(radius)]], dtype="float32")
+			
+    delta = np.array([
+			[0, 0],
+			[-np.random.randint(radius), np.random.randint(radius)],
+			[0, 0],
+			[np.random.randint(radius), -np.random.randint(radius)]], dtype="float32")
+
+    dst = src + delta
+ 
+    print("delta:", delta, "destination: ", dst)
 
     M = cv2.getPerspectiveTransform(src, dst)
     warped = cv2.warpPerspective(image, M, (imgWidth, imgHeight))
