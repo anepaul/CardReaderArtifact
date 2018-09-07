@@ -27,11 +27,11 @@ backWidth = back.size[0]
 backHeight = back.size[1]
 
 #Scale range
-scaleLow = 0.7
-scaleHigh = 1.0
+scaleLow = 0.8
+scaleHigh = 1.4
 
 #Total number of backgrounds available
-backChoiceHigh = 3
+backChoiceHigh = 480
 cardChoiceHigh = 3
 
 #Whether to output grayscale images
@@ -90,18 +90,43 @@ def _create_composite_resize(img, backPath, size, pos):
     
     return back
 
-def _write_xml_file(xmlPath, imgPath, scale, pos1, pos2):
+def _write_xml_file(xmlPath, noCard, imgPath, scale=None, pos1=None, pos2=None):
     with open(xmlPath, 'w') as xml_file:
         xml_file.write('<annotation>\n')
+        xml_file.write('\t<noCard>{}</noCard>\n'.format(noCard))
         xml_file.write('\t<path>{}</path>\n'.format(imgPath))
-        xml_file.write('\t<scale>{}</scale>\n'.format(scale))
-        xml_file.write('\t<xmin>{}</xmin>\n'.format(pos1[0]))
-        xml_file.write('\t<ymin>{}</ymin>\n'.format(pos1[1]))
-        xml_file.write('\t<xmax>{}</xmax>\n'.format(pos2[0]))
-        xml_file.write('\t<ymax>{}</ymax>\n'.format(pos2[1]))
-
+        
+        if noCard == 0:
+        	xml_file.write('\t<scale>{}</scale>\n'.format(scale))
+        	xml_file.write('\t<xmin>{}</xmin>\n'.format(pos1[0]))
+        	xml_file.write('\t<ymin>{}</ymin>\n'.format(pos1[1]))
+        	xml_file.write('\t<xmax>{}</xmax>\n'.format(pos2[0]))
+        	xml_file.write('\t<ymax>{}</ymax>\n'.format(pos2[1]))
+        else:
+        	xml_file.write('\t<scale>{}</scale>\n'.format(0))
+        	xml_file.write('\t<xmin>{}</xmin>\n'.format(0))
+        	xml_file.write('\t<ymin>{}</ymin>\n'.format(0))
+        	xml_file.write('\t<xmax>{}</xmax>\n'.format(0))
+        	xml_file.write('\t<ymax>{}</ymax>\n'.format(0))        	
+        	
         xml_file.write('</annotation>')
+		
+def _generate_empty_image(index):
+	compPath = '{0}/{1}.png'.format(compRoot, '{:06d}'.format(index))
+	
+	#Pick a random background and make a copy
+	backChoice = np.random.randint(1, high= backChoiceHigh)
+	backPath = '{0}/{1}.png'.format(backRoot, '{:06d}'.format(backChoice))
+	back = Image.open(backPath)
+	if outputMode == 'L':
+		back = back.convert('L')
+	back.save(compPath)
+	
+	print("empty image path:", compPath)
 
+	#generate the xml file
+	xmlPath = '{0}/{1}.xml'.format(xmlRoot, '{:06d}'.format(index))
+	_write_xml_file(xmlPath, 1, compPath)
 
 def _generate_card_images(totalImages, maxLightOffset):
     print("Total Image count:", totalImages)
@@ -110,7 +135,10 @@ def _generate_card_images(totalImages, maxLightOffset):
     maxRandomValue = 2*maxLightOffset + 1
     
     for i in range(totalImages):
-
+        if np.random.randint(10)>3:
+            _generate_empty_image(i)
+            continue
+            
         #Pick a random background
         backChoice = np.random.randint(1, high= backChoiceHigh)
         backPath = '{0}/{1}.png'.format(backRoot, '{:06d}'.format(backChoice))
@@ -162,7 +190,7 @@ def _generate_card_images(totalImages, maxLightOffset):
 
         #generate the xml file
         xmlPath = '{0}/{1}.xml'.format(xmlRoot, '{:06d}'.format(i))
-        _write_xml_file(xmlPath, compPath, scale, [posX, posY], [posX+imgWidth, posY+imgHeight])
+        _write_xml_file(xmlPath, 0, compPath, scale, [posX, posY], [posX+imgWidth, posY+imgHeight])
         
 def parse_args():
     parser = argparse.ArgumentParser(description = 'Create training and validation data for card reader.')
