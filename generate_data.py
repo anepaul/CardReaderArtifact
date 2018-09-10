@@ -135,7 +135,7 @@ def _generate_card_images(totalImages, maxLightOffset):
     maxRandomValue = 2*maxLightOffset + 1
     
     for i in range(totalImages):
-        if np.random.randint(10)>3:
+        if np.random.randint(10)>8:
             _generate_empty_image(i)
             continue
             
